@@ -1,4 +1,7 @@
-export const allowedOrigins = ["http://localhost:5173"];
+export const allowedOrigins = [
+  "http://localhost:5173",
+  "https://spirelogs.vercel.app",
+];
 
 const corsOptions = {
   origin: function (origin, callback) {
