@@ -91,6 +91,15 @@ router.post("/", async (req: Request, res: Response) => {
   try {
     const runData: RunData = req.body;
 
+    // Check if run with this playId already exists
+    const existingRun = await prisma.run.findUnique({
+      where: { playId: runData.play_id },
+    });
+
+    if (existingRun) {
+      return res.status(409).json({ error: "alreadyExists" });
+    }
+
     // Create or find cards
     const cardIds: string[] = [];
     for (const cardName of runData.master_deck) {
