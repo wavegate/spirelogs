@@ -1,0 +1,50 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "concurrently \"tsc -watch\" \"tsc-alias -w\" \"nodemon ./dist/index.js\"",
+    "start": "node dist/index.js",
+    "build": "chmod +x build.sh && ./build.sh",
+    "commit": "cd .. && npm run commit",
+    "seed": "node prisma/seed.js",
+    "seed-backend": "node seed/index.js"
+  },
+  "type": "module",
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
+    "@types/jsonwebtoken": "^9.0.8",
+    "@types/node-cron": "^3.0.11",
+    "csv-parser": "^3.2.0",
+    "tsc-alias": "^1.8.10",
+    "@types/express-session": "^1.18.0"
+  },
+  "dependencies": {
+    "@faker-js/faker": "^9.5.0",
+    "@prisma/client": "^6.4.0",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/elasticsearch": "^5.0.43",
+    "bcryptjs": "^3.0.2",
+    "concurrently": "^9.1.2",
+    "cors": "^2.8.5",
+    "dayjs": "^1.11.12",
+    "dotenv": "^16.4.7",
+    "elasticsearch": "^16.7.3",
+    "express": "^4.21.2",
+    "form-data": "^4.0.2",
+    "jsonwebtoken": "^9.0.2",
+    "nodemon": "^3.1.9",
+    "prisma": "^6.4.0",
+    "typescript": "^5.7.3",
+    "passport": "^0.7.0",
+    "express-session": "^1.18.0"
+  },
+  "prisma": {
+    "seed": "node prisma/seed.js"
+  }
+}
