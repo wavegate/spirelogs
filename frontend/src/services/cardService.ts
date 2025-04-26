@@ -1,0 +1,53 @@
+import apiClient from "./apiClient";
+
+const route = "/cards";
+
+interface Card {
+  id: number;
+  imageLink: string;
+  name: string;
+  description: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface CardFormData {
+  imageLink: string;
+  name: string;
+  description: string;
+}
+
+const getAllCards = async (): Promise<Card[]> => {
+  const { data } = await apiClient.get(route);
+  return data;
+};
+
+const getCard = async (id: number): Promise<Card> => {
+  const { data } = await apiClient.get(`${route}/${id}`);
+  return data;
+};
+
+const createCard = async (formData: CardFormData): Promise<Card> => {
+  const { data } = await apiClient.post(route, formData);
+  return data;
+};
+
+const updateCard = async (
+  id: number,
+  formData: CardFormData
+): Promise<Card> => {
+  const { data } = await apiClient.put(`${route}/${id}`, formData);
+  return data;
+};
+
+const deleteCard = async (id: number): Promise<void> => {
+  await apiClient.delete(`${route}/${id}`);
+};
+
+export default {
+  getAllCards,
+  getCard,
+  createCard,
+  updateCard,
+  deleteCard,
+};
