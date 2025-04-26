@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import {
   Table,
   TableBody,
@@ -11,100 +11,119 @@ import { Button } from "@/components/ui/button";
 import { ArrowUpDown } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import cardService from "@/services/cardService";
-
-type SortField = "name" | "averageScore" | "runCount";
-type SortDirection = "asc" | "desc";
+import { Slider } from "@/components/ui/slider";
 
 const CardStatsTable: React.FC = () => {
-  const [sortField, setSortField] = useState<SortField>("name");
-  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
+  const [sortBy, setSortBy] = useState<"name" | "score" | "runCount">("score");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
+  const [minRunCount, setMinRunCount] = useState(0);
 
   const {
     data: cards,
     isLoading,
     error,
   } = useQuery({
-    queryKey: ["cards-with-scores"],
+    queryKey: ["cardsWithScores"],
     queryFn: cardService.getCardsWithScores,
   });
 
-  const handleSort = (field: SortField) => {
-    if (sortField === field) {
-      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
-    } else {
-      setSortField(field);
-      setSortDirection("asc");
-    }
-  };
-
-  const sortedCards = React.useMemo(() => {
+  const filteredAndSortedCards = useMemo(() => {
     if (!cards) return [];
-    return [...cards].sort((a, b) => {
-      let comparison = 0;
-      switch (sortField) {
-        case "name":
-          comparison = a.name.localeCompare(b.name);
-          break;
-        case "averageScore":
-          comparison = (a.averageScore ?? 0) - (b.averageScore ?? 0);
-          break;
-        case "runCount":
-          comparison = a.runCount - b.runCount;
-          break;
+
+    const filtered = cards.filter((card) => card.runCount >= minRunCount);
+
+    return [...filtered].sort((a, b) => {
+      if (sortBy === "name") {
+        return sortDirection === "asc"
+          ? a.name.localeCompare(b.name)
+          : b.name.localeCompare(a.name);
       }
-      return sortDirection === "asc" ? comparison : -comparison;
+      if (sortBy === "score") {
+        return sortDirection === "asc"
+          ? (a.averageScore || 0) - (b.averageScore || 0)
+          : (b.averageScore || 0) - (a.averageScore || 0);
+      }
+      return sortDirection === "asc"
+        ? a.runCount - b.runCount
+        : b.runCount - a.runCount;
     });
-  }, [cards, sortField, sortDirection]);
+  }, [cards, sortBy, sortDirection, minRunCount]);
 
-  if (isLoading) {
-    return <div>Loading...</div>;
-  }
+  const maxRunCount = useMemo(() => {
+    if (!cards) return 0;
+    return Math.max(...cards.map((card) => card.runCount));
+  }, [cards]);
 
-  if (error) {
-    return <div>Error loading card statistics</div>;
-  }
+  if (isLoading) return <div>Loading...</div>;
+  if (error) return <div>Error loading card statistics</div>;
 
   return (
-    <div className="rounded-md border">
+    <div className="space-y-4">
+      <div className="flex items-center gap-4">
+        <div className="w-64">
+          <label className="text-sm font-medium mb-2 block">
+            Minimum Run Count: {minRunCount}
+          </label>
+          <Slider
+            value={[minRunCount]}
+            onValueChange={([value]) => setMinRunCount(value)}
+            max={maxRunCount}
+            step={1}
+          />
+        </div>
+      </div>
+
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>
-              <Button
-                variant="ghost"
-                onClick={() => handleSort("name")}
-                className="flex items-center gap-1"
-              >
-                Card Name
-                <ArrowUpDown className="h-4 w-4" />
-              </Button>
+            <TableHead
+              className="cursor-pointer"
+              onClick={() => {
+                if (sortBy === "name") {
+                  setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+                } else {
+                  setSortBy("name");
+                  setSortDirection("asc");
+                }
+              }}
+            >
+              Card Name{" "}
+              {sortBy === "name" && (sortDirection === "asc" ? "↑" : "↓")}
             </TableHead>
-            <TableHead>
-              <Button
-                variant="ghost"
-                onClick={() => handleSort("averageScore")}
-                className="flex items-center gap-1"
-              >
-                Average Score
-                <ArrowUpDown className="h-4 w-4" />
-              </Button>
+            <TableHead
+              className="cursor-pointer"
+              onClick={() => {
+                if (sortBy === "score") {
+                  setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+                } else {
+                  setSortBy("score");
+                  setSortDirection("desc");
+                }
+              }}
+            >
+              Average Score{" "}
+              {sortBy === "score" && (sortDirection === "asc" ? "↑" : "↓")}
             </TableHead>
-            <TableHead>
-              <Button
-                variant="ghost"
-                onClick={() => handleSort("runCount")}
-                className="flex items-center gap-1"
-              >
-                Run Count
-                <ArrowUpDown className="h-4 w-4" />
-              </Button>
+            <TableHead
+              className="cursor-pointer"
+              onClick={() => {
+                if (sortBy === "runCount") {
+                  setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+                } else {
+                  setSortBy("runCount");
+                  setSortDirection("desc");
+                }
+              }}
+            >
+              Run Count{" "}
+              {sortBy === "runCount" && (sortDirection === "asc" ? "↑" : "↓")}
             </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {sortedCards.map((card) => (
+          {filteredAndSortedCards.map((card) => (
             <TableRow key={card.id}>
-              <TableCell className="font-medium">{card.name}</TableCell>
+              <TableCell>{card.name}</TableCell>
               <TableCell>
                 {card.averageScore !== null
                   ? card.averageScore.toFixed(2)

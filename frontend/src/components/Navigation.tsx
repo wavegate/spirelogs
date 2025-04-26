@@ -16,6 +16,9 @@ const Navigation: React.FC = () => {
           <Link to="/cards" className="hover:bg-gray-700 px-3 py-2 rounded">
             Card Statistics
           </Link>
+          <Link to="/relics" className="hover:bg-gray-700 px-3 py-2 rounded">
+            Relic Statistics
+          </Link>
         </div>
       </div>
     </nav>

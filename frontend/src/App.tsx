@@ -4,6 +4,7 @@ import Navigation from "./components/Navigation";
 import RunList from "./components/RunList";
 import RunUpload from "./components/RunUpload";
 import CardStatsTable from "./components/CardStatsTable";
+import RelicStatsTable from "./components/RelicStatsTable";
 
 const App: React.FC = () => {
   return (
@@ -15,6 +16,7 @@ const App: React.FC = () => {
             <Route path="/" element={<RunList />} />
             <Route path="/upload" element={<RunUpload />} />
             <Route path="/cards" element={<CardStatsTable />} />
+            <Route path="/relics" element={<RelicStatsTable />} />
           </Routes>
         </main>
       </div>

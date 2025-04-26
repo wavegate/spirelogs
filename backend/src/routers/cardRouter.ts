@@ -16,23 +16,49 @@ router.get("/with-scores", async (req: Request, res: Response) => {
       },
     });
 
-    const cardsWithScores = cards.map((card) => {
-      const scores = card.inMasterDeck
-        .map((run) => run.score)
-        .filter((score): score is number => score !== null);
-
-      const averageScore =
-        scores.length > 0
-          ? scores.reduce((a, b) => a + b, 0) / scores.length
-          : null;
-
-      return {
-        id: card.id,
-        name: card.name,
-        averageScore,
-        runCount: scores.length,
-      };
+    // Group cards by their base name (without +X suffix)
+    const cardGroups = new Map<string, typeof cards>();
+    cards.forEach((card) => {
+      const baseName = card.name.replace(/\s*\+\d+$/, "");
+      if (!cardGroups.has(baseName)) {
+        cardGroups.set(baseName, []);
+      }
+      cardGroups.get(baseName)!.push(card);
     });
+
+    // Combine statistics for each group
+    const cardsWithScores = Array.from(cardGroups.entries()).map(
+      ([baseName, cardGroup]) => {
+        // Combine all inMasterDeck entries
+        const allRuns = cardGroup
+          .flatMap((card) => card.inMasterDeck.map((run) => run.score))
+          .filter((score): score is number => score !== null);
+
+        const averageScore =
+          allRuns.length > 0
+            ? allRuns.reduce((a, b) => a + b, 0) / allRuns.length
+            : null;
+
+        return {
+          id: cardGroup[0].id,
+          name: baseName,
+          averageScore,
+          runCount: allRuns.length,
+          versions: cardGroup.map((card) => ({
+            name: card.name,
+            runCount: card.inMasterDeck.filter((run) => run.score !== null)
+              .length,
+            averageScore:
+              card.inMasterDeck
+                .map((run) => run.score)
+                .filter((score): score is number => score !== null)
+                .reduce((a, b) => a + b, 0) /
+                card.inMasterDeck.filter((run) => run.score !== null).length ||
+              null,
+          })),
+        };
+      }
+    );
 
     res.json(cardsWithScores);
   } catch (error) {

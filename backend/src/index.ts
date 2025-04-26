@@ -6,6 +6,7 @@ import session from "express-session";
 import corsOptions from "./middleware/corsOptions.js";
 import cardRouter from "./routers/cardRouter.js";
 import runRouter from "./routers/runRouter.js";
+import relicRouter from "./routers/relicRouter.js";
 
 const app = express();
 
@@ -31,7 +32,7 @@ app.use(
 
 app.use("/cards", cardRouter);
 app.use("/runs", runRouter);
-
+app.use("/relics", relicRouter);
 const PORT = process.env.PORT || 3456;
 
 // app.use("/auth", authRouter);
