@@ -11,6 +11,7 @@ router.get("/with-scores", async (req: Request, res: Response) => {
         inMasterDeck: {
           select: {
             score: true,
+            isVictory: true,
           },
         },
       },
@@ -31,12 +32,26 @@ router.get("/with-scores", async (req: Request, res: Response) => {
       ([baseName, cardGroup]) => {
         // Combine all inMasterDeck entries
         const allRuns = cardGroup
-          .flatMap((card) => card.inMasterDeck.map((run) => run.score))
-          .filter((score): score is number => score !== null);
+          .flatMap((card) =>
+            card.inMasterDeck.map((run) => ({
+              score: run.score,
+              isVictory: run.isVictory,
+            }))
+          )
+          .filter(
+            (run): run is { score: number; isVictory: boolean } =>
+              run.score !== null && run.isVictory !== null
+          );
 
         const averageScore =
           allRuns.length > 0
-            ? allRuns.reduce((a, b) => a + b, 0) / allRuns.length
+            ? allRuns.reduce((a, b) => a + b.score, 0) / allRuns.length
+            : null;
+
+        const winRate =
+          allRuns.length > 0
+            ? (allRuns.filter((run) => run.isVictory).length / allRuns.length) *
+              100
             : null;
 
         return {
@@ -44,20 +59,34 @@ router.get("/with-scores", async (req: Request, res: Response) => {
           name: baseName,
           character: cardGroup[0].character,
           averageScore,
+          winRate,
           runCount: allRuns.length,
-          versions: cardGroup.map((card) => ({
-            name: card.name,
-            character: card.character,
-            runCount: card.inMasterDeck.filter((run) => run.score !== null)
-              .length,
-            averageScore:
-              card.inMasterDeck
-                .map((run) => run.score)
-                .filter((score): score is number => score !== null)
-                .reduce((a, b) => a + b, 0) /
-                card.inMasterDeck.filter((run) => run.score !== null).length ||
-              null,
-          })),
+          versions: cardGroup.map((card) => {
+            const cardRuns = card.inMasterDeck
+              .filter((run) => run.score !== null && run.isVictory !== null)
+              .map((run) => ({
+                score: run.score!,
+                isVictory: run.isVictory!,
+              }));
+
+            const cardWinRate =
+              cardRuns.length > 0
+                ? (cardRuns.filter((run) => run.isVictory).length /
+                    cardRuns.length) *
+                  100
+                : null;
+
+            return {
+              name: card.name,
+              character: card.character,
+              runCount: cardRuns.length,
+              averageScore:
+                cardRuns.length > 0
+                  ? cardRuns.reduce((a, b) => a + b.score, 0) / cardRuns.length
+                  : null,
+              winRate: cardWinRate,
+            };
+          }),
         };
       }
     );

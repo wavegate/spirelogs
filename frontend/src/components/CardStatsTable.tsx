@@ -19,16 +19,18 @@ interface CardWithScores {
   name: string;
   character: string | null;
   averageScore: number | null;
+  winRate: number | null;
   runCount: number;
   versions: {
     name: string;
     character: string | null;
     runCount: number;
     averageScore: number | null;
+    winRate: number | null;
   }[];
 }
 
-type SortColumn = "name" | "score" | "runCount" | "character";
+type SortColumn = "name" | "score" | "runCount" | "character" | "winRate";
 type SortDirection = "asc" | "desc";
 
 interface SortCriteria {
@@ -97,6 +99,9 @@ const CardStatsTable: React.FC = () => {
             break;
           case "score":
             comparison = (a.averageScore || 0) - (b.averageScore || 0);
+            break;
+          case "winRate":
+            comparison = (a.winRate || 0) - (b.winRate || 0);
             break;
           case "runCount":
             comparison = a.runCount - b.runCount;
@@ -188,6 +193,21 @@ const CardStatsTable: React.FC = () => {
             </TableHead>
             <TableHead
               className="cursor-pointer"
+              onClick={() => handleSort("winRate")}
+            >
+              Win Rate{" "}
+              {sortCriteria.map(
+                (criteria, index) =>
+                  criteria.column === "winRate" && (
+                    <span key={index} className="text-xs">
+                      {criteria.direction === "asc" ? "↑" : "↓"}
+                      {index > 0 && index + 1}
+                    </span>
+                  )
+              )}
+            </TableHead>
+            <TableHead
+              className="cursor-pointer"
               onClick={() => handleSort("runCount")}
             >
               Run Count{" "}
@@ -212,6 +232,9 @@ const CardStatsTable: React.FC = () => {
                 {card.averageScore !== null
                   ? card.averageScore.toFixed(2)
                   : "N/A"}
+              </TableCell>
+              <TableCell>
+                {card.winRate !== null ? `${card.winRate.toFixed(1)}%` : "N/A"}
               </TableCell>
               <TableCell>{card.runCount}</TableCell>
             </TableRow>
