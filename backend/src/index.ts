@@ -4,6 +4,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import session from "express-session";
 import corsOptions from "./middleware/corsOptions.js";
+import cardRouter from "./routers/cardRouter.js";
 
 const app = express();
 
@@ -26,6 +27,8 @@ app.use(
     },
   })
 );
+
+app.use("/cards", cardRouter);
 
 const PORT = process.env.PORT || 3456;
 
