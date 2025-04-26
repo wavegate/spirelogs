@@ -12,10 +12,34 @@ import { ArrowUpDown } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import cardService from "@/services/cardService";
 import { Slider } from "@/components/ui/slider";
+import CardCharacterAssigner from "./CardCharacterAssigner";
+
+interface CardWithScores {
+  id: string;
+  name: string;
+  character: string | null;
+  averageScore: number | null;
+  runCount: number;
+  versions: {
+    name: string;
+    character: string | null;
+    runCount: number;
+    averageScore: number | null;
+  }[];
+}
+
+type SortColumn = "name" | "score" | "runCount" | "character";
+type SortDirection = "asc" | "desc";
+
+interface SortCriteria {
+  column: SortColumn;
+  direction: SortDirection;
+}
 
 const CardStatsTable: React.FC = () => {
-  const [sortBy, setSortBy] = useState<"name" | "score" | "runCount">("score");
-  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
+  const [sortCriteria, setSortCriteria] = useState<SortCriteria[]>([
+    { column: "score", direction: "desc" },
+  ]);
   const [minRunCount, setMinRunCount] = useState(0);
 
   const {
@@ -27,27 +51,66 @@ const CardStatsTable: React.FC = () => {
     queryFn: cardService.getCardsWithScores,
   });
 
+  const handleSort = (column: SortColumn) => {
+    setSortCriteria((current) => {
+      const existingIndex = current.findIndex(
+        (criteria) => criteria.column === column
+      );
+
+      if (existingIndex === -1) {
+        // Column not in sort criteria, add it as primary sort
+        return [{ column, direction: "asc" }, ...current];
+      }
+
+      const newCriteria = [...current];
+      const existingCriteria = newCriteria[existingIndex];
+
+      if (existingCriteria.direction === "asc") {
+        // Change direction to desc
+        newCriteria[existingIndex] = { ...existingCriteria, direction: "desc" };
+      } else {
+        // Remove from sort criteria
+        newCriteria.splice(existingIndex, 1);
+      }
+
+      return newCriteria;
+    });
+  };
+
   const filteredAndSortedCards = useMemo(() => {
     if (!cards) return [];
 
     const filtered = cards.filter((card) => card.runCount >= minRunCount);
 
     return [...filtered].sort((a, b) => {
-      if (sortBy === "name") {
-        return sortDirection === "asc"
-          ? a.name.localeCompare(b.name)
-          : b.name.localeCompare(a.name);
+      for (const criteria of sortCriteria) {
+        let comparison = 0;
+
+        switch (criteria.column) {
+          case "name":
+            comparison = a.name.localeCompare(b.name);
+            break;
+          case "character":
+            const aChar = a.character || "Unknown";
+            const bChar = b.character || "Unknown";
+            comparison = aChar.localeCompare(bChar);
+            break;
+          case "score":
+            comparison = (a.averageScore || 0) - (b.averageScore || 0);
+            break;
+          case "runCount":
+            comparison = a.runCount - b.runCount;
+            break;
+        }
+
+        if (comparison !== 0) {
+          return criteria.direction === "asc" ? comparison : -comparison;
+        }
       }
-      if (sortBy === "score") {
-        return sortDirection === "asc"
-          ? (a.averageScore || 0) - (b.averageScore || 0)
-          : (b.averageScore || 0) - (a.averageScore || 0);
-      }
-      return sortDirection === "asc"
-        ? a.runCount - b.runCount
-        : b.runCount - a.runCount;
+
+      return 0;
     });
-  }, [cards, sortBy, sortDirection, minRunCount]);
+  }, [cards, sortCriteria, minRunCount]);
 
   const maxRunCount = useMemo(() => {
     if (!cards) return 0;
@@ -59,6 +122,8 @@ const CardStatsTable: React.FC = () => {
 
   return (
     <div className="space-y-4">
+      {/* <CardCharacterAssigner /> */}
+
       <div className="flex items-center gap-4">
         <div className="w-64">
           <label className="text-sm font-medium mb-2 block">
@@ -78,45 +143,63 @@ const CardStatsTable: React.FC = () => {
           <TableRow>
             <TableHead
               className="cursor-pointer"
-              onClick={() => {
-                if (sortBy === "name") {
-                  setSortDirection(sortDirection === "asc" ? "desc" : "asc");
-                } else {
-                  setSortBy("name");
-                  setSortDirection("asc");
-                }
-              }}
+              onClick={() => handleSort("name")}
             >
               Card Name{" "}
-              {sortBy === "name" && (sortDirection === "asc" ? "↑" : "↓")}
+              {sortCriteria.map(
+                (criteria, index) =>
+                  criteria.column === "name" && (
+                    <span key={index} className="text-xs">
+                      {criteria.direction === "asc" ? "↑" : "↓"}
+                      {index > 0 && index + 1}
+                    </span>
+                  )
+              )}
             </TableHead>
             <TableHead
               className="cursor-pointer"
-              onClick={() => {
-                if (sortBy === "score") {
-                  setSortDirection(sortDirection === "asc" ? "desc" : "asc");
-                } else {
-                  setSortBy("score");
-                  setSortDirection("desc");
-                }
-              }}
+              onClick={() => handleSort("character")}
+            >
+              Character{" "}
+              {sortCriteria.map(
+                (criteria, index) =>
+                  criteria.column === "character" && (
+                    <span key={index} className="text-xs">
+                      {criteria.direction === "asc" ? "↑" : "↓"}
+                      {index > 0 && index + 1}
+                    </span>
+                  )
+              )}
+            </TableHead>
+            <TableHead
+              className="cursor-pointer"
+              onClick={() => handleSort("score")}
             >
               Average Score{" "}
-              {sortBy === "score" && (sortDirection === "asc" ? "↑" : "↓")}
+              {sortCriteria.map(
+                (criteria, index) =>
+                  criteria.column === "score" && (
+                    <span key={index} className="text-xs">
+                      {criteria.direction === "asc" ? "↑" : "↓"}
+                      {index > 0 && index + 1}
+                    </span>
+                  )
+              )}
             </TableHead>
             <TableHead
               className="cursor-pointer"
-              onClick={() => {
-                if (sortBy === "runCount") {
-                  setSortDirection(sortDirection === "asc" ? "desc" : "asc");
-                } else {
-                  setSortBy("runCount");
-                  setSortDirection("desc");
-                }
-              }}
+              onClick={() => handleSort("runCount")}
             >
               Run Count{" "}
-              {sortBy === "runCount" && (sortDirection === "asc" ? "↑" : "↓")}
+              {sortCriteria.map(
+                (criteria, index) =>
+                  criteria.column === "runCount" && (
+                    <span key={index} className="text-xs">
+                      {criteria.direction === "asc" ? "↑" : "↓"}
+                      {index > 0 && index + 1}
+                    </span>
+                  )
+              )}
             </TableHead>
           </TableRow>
         </TableHeader>
@@ -124,6 +207,7 @@ const CardStatsTable: React.FC = () => {
           {filteredAndSortedCards.map((card) => (
             <TableRow key={card.id}>
               <TableCell>{card.name}</TableCell>
+              <TableCell>{card.character || "Unknown"}</TableCell>
               <TableCell>
                 {card.averageScore !== null
                   ? card.averageScore.toFixed(2)

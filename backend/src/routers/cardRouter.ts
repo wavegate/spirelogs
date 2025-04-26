@@ -42,10 +42,12 @@ router.get("/with-scores", async (req: Request, res: Response) => {
         return {
           id: cardGroup[0].id,
           name: baseName,
+          character: cardGroup[0].character,
           averageScore,
           runCount: allRuns.length,
           versions: cardGroup.map((card) => ({
             name: card.name,
+            character: card.character,
             runCount: card.inMasterDeck.filter((run) => run.score !== null)
               .length,
             averageScore:
@@ -139,6 +141,67 @@ router.delete("/:id", async (req: Request, res: Response) => {
     res.json({ message: "Card deleted successfully" });
   } catch (error) {
     res.status(500).json({ error: "Failed to delete card" });
+  }
+});
+
+// Assign characters to cards based on runs
+router.post("/assign-characters", async (req: Request, res: Response) => {
+  try {
+    // Get all runs with their master deck and character
+    const runs = await prisma.run.findMany({
+      where: {
+        characterChosen: {
+          not: null,
+        },
+      },
+      select: {
+        id: true,
+        characterChosen: true,
+        masterDeck: {
+          select: {
+            name: true,
+            id: true,
+            character: true,
+          },
+        },
+      },
+    });
+
+    let updatedCount = 0;
+    let skippedCount = 0;
+
+    // Process each run
+    for (const run of runs) {
+      if (!run.characterChosen) continue;
+
+      // Process each card in the master deck
+      for (const card of run.masterDeck) {
+        // Skip if card already has a character
+        if (card.character) {
+          skippedCount++;
+          continue;
+        }
+
+        // Update the card with the run's character
+        console.log(card.name, run.characterChosen);
+        await prisma.card.update({
+          where: { id: card.id },
+          data: { character: run.characterChosen },
+        });
+        updatedCount++;
+      }
+    }
+
+    res.json({
+      message: "Character assignment completed",
+      stats: {
+        updatedCards: updatedCount,
+        skippedCards: skippedCount,
+      },
+    });
+  } catch (error) {
+    console.error("Error assigning characters to cards:", error);
+    res.status(500).json({ error: "Failed to assign characters to cards" });
   }
 });
 

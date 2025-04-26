@@ -24,6 +24,14 @@ interface CardFormData {
   description: string;
 }
 
+interface AssignCharactersResponse {
+  message: string;
+  stats: {
+    updatedCards: number;
+    skippedCards: number;
+  };
+}
+
 const getAllCards = async (): Promise<Card[]> => {
   const { data } = await apiClient.get(route);
   return data;
@@ -56,6 +64,11 @@ const getCardsWithScores = async (): Promise<CardWithScores[]> => {
   return data;
 };
 
+const assignCharactersToCards = async (): Promise<AssignCharactersResponse> => {
+  const { data } = await apiClient.post(`${route}/assign-characters`);
+  return data;
+};
+
 export default {
   getAllCards,
   getCard,
@@ -63,4 +76,5 @@ export default {
   updateCard,
   deleteCard,
   getCardsWithScores,
+  assignCharactersToCards,
 };
