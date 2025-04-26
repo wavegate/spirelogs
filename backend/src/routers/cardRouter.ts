@@ -3,6 +3,44 @@ import express, { Request, Response } from "express";
 
 const router = express.Router();
 
+// Get all cards with average run scores
+router.get("/with-scores", async (req: Request, res: Response) => {
+  try {
+    const cards = await prisma.card.findMany({
+      include: {
+        inMasterDeck: {
+          select: {
+            score: true,
+          },
+        },
+      },
+    });
+
+    const cardsWithScores = cards.map((card) => {
+      const scores = card.inMasterDeck
+        .map((run) => run.score)
+        .filter((score): score is number => score !== null);
+
+      const averageScore =
+        scores.length > 0
+          ? scores.reduce((a, b) => a + b, 0) / scores.length
+          : null;
+
+      return {
+        id: card.id,
+        name: card.name,
+        averageScore,
+        runCount: scores.length,
+      };
+    });
+
+    res.json(cardsWithScores);
+  } catch (error) {
+    console.error("Error fetching cards with scores:", error);
+    res.status(500).json({ error: "Failed to fetch cards with scores" });
+  }
+});
+
 // Create a new card
 router.post("/", async (req: Request, res: Response) => {
   try {
@@ -35,7 +73,7 @@ router.get("/:id", async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const card = await prisma.card.findUnique({
-      where: { id: parseInt(id) },
+      where: { id },
     });
     if (!card) {
       return res.status(404).json({ error: "Card not found" });

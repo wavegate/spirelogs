@@ -13,11 +13,204 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Potion {
+  id             String           @id @default(uuid())
+  name           String           @unique
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  obtainedInRuns PotionObtained[]
+}
+
 model Card {
-  id          Int      @id @default(autoincrement())
-  imageLink   String
-  name        String
-  description String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        String   @id @default(uuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  pickedInChoices    CardChoice[]     @relation("PickedCard")
+  notPickedInChoices CardChoice[]     @relation("NotPickedCards")
+  removedInChoices   EventChoice[]    @relation("EventRemovedCards")
+  purgedInRuns       Run[]            @relation("ItemsPurged")
+  inMasterDeck       Run[]            @relation("MasterDeck")
+  inCampfireChoices  CampfireChoice[]
+  purchasedInRuns    Run[]            @relation("PurchasedInRuns")
+}
+
+model Enemy {
+  id          String        @id @default(uuid())
+  name        String        @unique
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  DamageTaken DamageTaken[]
+}
+
+model PlayerChoice {
+  id           String        @id @default(uuid())
+  name         String        @unique
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  eventChoices EventChoice[]
+}
+
+model CardChoice {
+  id        String   @id @default(uuid())
+  floor     Int
+  picked    Card     @relation("PickedCard", fields: [pickedId], references: [id])
+  pickedId  String
+  notPicked Card[]   @relation("NotPickedCards")
+  run       Run      @relation(fields: [runId], references: [id], onDelete: Cascade)
+  runId     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model DamageTaken {
+  id        String   @id @default(uuid())
+  damage    Int
+  floor     Int
+  turns     Int
+  enemy     Enemy    @relation(fields: [enemyId], references: [id])
+  enemyId   String
+  run       Run      @relation(fields: [runId], references: [id], onDelete: Cascade)
+  runId     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model CampfireChoice {
+  id        String   @id @default(uuid())
+  floor     Int
+  key       String
+  data      Card?    @relation(fields: [cardId], references: [id])
+  run       Run      @relation(fields: [runId], references: [id], onDelete: Cascade)
+  runId     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  cardId    String?
+}
+
+model PotionObtained {
+  id        String   @id @default(uuid())
+  floor     Int
+  potion    Potion   @relation(fields: [potionId], references: [id])
+  potionId  String
+  run       Run      @relation(fields: [runId], references: [id], onDelete: Cascade)
+  runId     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Relic {
+  id          String            @id @default(uuid())
+  name        String            @unique
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  pickedBy    BossRelicChoice[] @relation("RelicPicked")
+  notPickedBy BossRelicChoice[] @relation("NotPickedBossRelics")
+  runs        Run[]
+  obtained    RelicObtained[]
+
+  bossRelicChoiceId String?
+}
+
+model RelicObtained {
+  id        String   @id @default(uuid())
+  floor     Int
+  relic     Relic    @relation(fields: [relicId], references: [id])
+  relicId   String
+  run       Run      @relation(fields: [runId], references: [id], onDelete: Cascade)
+  runId     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model BossRelicChoice {
+  id        String   @id @default(uuid())
+  picked    Relic    @relation("RelicPicked", fields: [pickedId], references: [id])
+  pickedId  String
+  notPicked Relic[]  @relation("NotPickedBossRelics")
+  run       Run      @relation(fields: [runId], references: [id], onDelete: Cascade)
+  runId     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Event {
+  id           String        @id @default(uuid())
+  name         String        @unique
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  eventChoices EventChoice[]
+}
+
+model EventChoice {
+  id             String        @id @default(uuid())
+  cardsRemoved   Card[]        @relation("EventRemovedCards")
+  damageHealed   Int?
+  goldGain       Int?
+  playerChoice   PlayerChoice? @relation(fields: [playerChoiceId], references: [id])
+  playerChoiceId String?
+  damageTaken    Int?
+  maxHpGain      Int?
+  maxHpLoss      Int?
+  event          Event         @relation(fields: [eventId], references: [id])
+  eventId        String
+  floor          Int?
+  goldLoss       Int?
+  run            Run           @relation(fields: [runId], references: [id], onDelete: Cascade)
+  runId          String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Run {
+  id                  String            @id @default(uuid())
+  playId              String?           @unique
+  characterChosen     String?
+  floorReached        Int?
+  playtime            Int?
+  score               Int?
+  isVictory           Boolean?
+  isAscensionMode     Boolean?
+  isDaily             Boolean?
+  isTrial             Boolean?
+  isEndless           Boolean?
+  isBeta              Boolean?
+  ascensionLevel      Int?
+  gold                Int?
+  timestamp           DateTime?
+  localTime           String?
+  seedPlayed          String?
+  seedSourceTimestamp BigInt?
+  buildVersion        String?
+  winRate             Float?
+  playerExperience    Int?
+  neowBonus           String?
+  neowCost            String?
+  circletCount        Int?
+  purchasedPurges     Int?
+  campfireRested      Int?
+  campfireUpgraded    Int?
+  itemsPurged         Card[]            @relation("ItemsPurged")
+  pathTaken           String[]
+  pathPerFloor        String[]
+  currentHpPerFloor   Int[]
+  maxHpPerFloor       Int[]
+  goldPerFloor        Int[]
+  potionsFloorSpawned Int[]
+  potionsObtained     PotionObtained[]
+  potionsFloorUsage   Int[]
+  masterDeck          Card[]            @relation("MasterDeck")
+  relics              Relic[]
+  relicsObtained      RelicObtained[]
+  cardChoices         CardChoice[]
+  campfireChoices     CampfireChoice[]
+  bossRelics          BossRelicChoice[]
+  itemsPurchased      Card[]            @relation("PurchasedInRuns")
+  itemPurchaseFloors  Int[]
+  damageTaken         DamageTaken[]
+  eventChoices        EventChoice[]
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
 }

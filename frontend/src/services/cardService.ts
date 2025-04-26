@@ -1,5 +1,12 @@
 import apiClient from "./apiClient";
 
+interface CardWithScores {
+  id: string;
+  name: string;
+  averageScore: number | null;
+  runCount: number;
+}
+
 const route = "/cards";
 
 interface Card {
@@ -44,10 +51,16 @@ const deleteCard = async (id: number): Promise<void> => {
   await apiClient.delete(`${route}/${id}`);
 };
 
+const getCardsWithScores = async (): Promise<CardWithScores[]> => {
+  const { data } = await apiClient.get(`${route}/with-scores`);
+  return data;
+};
+
 export default {
   getAllCards,
   getCard,
   createCard,
   updateCard,
   deleteCard,
+  getCardsWithScores,
 };

@@ -1,21 +1,25 @@
-import { Provider } from "react-redux";
-import { createBrowserRouter, RouterProvider } from "react-router-dom";
-import { store } from "./stores/store";
-import CardComponent from "./components/CardComponent";
+import React from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import Navigation from "./components/Navigation";
+import RunList from "./components/RunList";
+import RunUpload from "./components/RunUpload";
+import CardStatsTable from "./components/CardStatsTable";
 
-const router = createBrowserRouter([
-  {
-    path: "/",
-    element: <CardComponent />,
-  },
-]);
-
-function App() {
+const App: React.FC = () => {
   return (
-    <Provider store={store}>
-      <RouterProvider router={router}></RouterProvider>
-    </Provider>
+    <Router>
+      <div className="min-h-screen bg-gray-100">
+        <Navigation />
+        <main className="container mx-auto p-4">
+          <Routes>
+            <Route path="/" element={<RunList />} />
+            <Route path="/upload" element={<RunUpload />} />
+            <Route path="/cards" element={<CardStatsTable />} />
+          </Routes>
+        </main>
+      </div>
+    </Router>
   );
-}
+};
 
 export default App;
